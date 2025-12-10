@@ -1,0 +1,19 @@
+# Go build
+/bin/
+obj/
+*.exe
+
+# Environment
+.env
+*.local
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+
+# Dependencies cache
+vendor/
