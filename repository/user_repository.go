@@ -2,6 +2,7 @@ package repository
 
 import (
     "ByTeora-Pos-Backend-App/config"
+	"ByTeora-Pos-Backend-App/models"
 )
 
 func CountUsers() (int, error) {
@@ -40,4 +41,44 @@ func CreateUser(
     )
 
     return err
+}
+
+func GetUserByEmail(email string) (*models.User, error) {
+    var user models.User
+
+    query := `
+        SELECT 
+            uuid,
+            email,
+            password,
+            nama_depan,
+            nama_belakang,
+            role,
+            status,
+            created_at,
+            modified_at,
+            deleted_at
+        FROM user 
+        WHERE email = ? AND deleted_at IS NULL
+        LIMIT 1
+    `
+
+    err := config.DB.QueryRow(query, email).Scan(
+        &user.UUID,
+        &user.Email,
+        &user.Password,
+        &user.NamaDepan,
+        &user.NamaBelakang,
+        &user.Role,
+        &user.Status,
+        &user.CreatedAt,
+        &user.ModifiedAt,
+        &user.DeletedAt,
+    )
+
+    if err != nil {
+        return nil, err
+    }
+
+    return &user, nil
 }

@@ -90,3 +90,65 @@ func CreateUser(c *gin.Context) {
 		},
 	})
 }
+
+func AuthLogin(c *gin.Context) {
+    var req dto.LoginRequest
+
+    // Request JSON body
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "status":  "error",
+            "message": "invalid request body",
+        })
+        return
+    }
+
+    // Validasi input
+    if req.Email == "" || req.Password == "" {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "status":  "error",
+            "message": "email and password are required",
+        })
+        return
+    }
+
+    // Find user by email
+    user, err := repository.GetUserByEmail(req.Email)
+    if err != nil {
+        c.JSON(http.StatusUnauthorized, gin.H{
+            "status":  "error",
+            "message": "invalid email or password",
+        })
+        return
+    }
+
+    // Check password
+    if !utils.CheckPasswordHash(req.Password, user.Password) {
+        c.JSON(http.StatusUnauthorized, gin.H{
+            "status":  "error",
+            "message": "invalid email or password",
+        })
+        return
+    }
+
+    // Generate token
+    token, err := utils.GenerateJWT(user.UUID, user.Email, user.Role)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "status":  "error",
+            "message": "failed to generate token",
+        })
+        return
+    }
+
+    // Response sukses
+    c.JSON(http.StatusOK, gin.H{
+        "status": "success",
+        "data": gin.H{
+            "uuid":  user.UUID,
+            "email": user.Email,
+            "role":  user.Role,
+            "token": token,
+        },
+    })
+}
