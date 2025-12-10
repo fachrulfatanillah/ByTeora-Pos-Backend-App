@@ -14,7 +14,7 @@ func RunMigrations() {
 		nama_depan VARCHAR(100),
 		nama_belakang VARCHAR(100),
 		image_url TEXT,
-		role ENUM('admin', 'cashier', 'owner') NOT NULL,
+		role ENUM('admin', 'owner') NOT NULL,
 		status ENUM('active', 'inactive', 'banned') NOT NULL DEFAULT 'active',
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
