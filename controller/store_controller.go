@@ -7,6 +7,7 @@ import (
     "github.com/gin-gonic/gin"
     "github.com/google/uuid"
     "net/http"
+	"time"
 )
 
 func CreateStore(c *gin.Context) {
@@ -190,6 +191,56 @@ func UpdateStore(c *gin.Context) {
             "address":      updatedStore.Address,
             "phone_number": updatedStore.PhoneNumber,
             "status":       updatedStore.Status,
+        },
+    })
+}
+
+func DeleteStore(c *gin.Context) {
+    storeUUID := c.Param("store_uuid")
+
+    userUUID, exists := c.Get("user_uuid")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{
+            "status":  "failed",
+            "message": "Unauthorized",
+        })
+        return
+    }
+
+    store, err := repository.GetStoreByUUID(storeUUID)
+    if err != nil {
+        c.JSON(http.StatusNotFound, gin.H{
+            "status":  "failed",
+            "message": "Store not found",
+        })
+        return
+    }
+
+    belongs, err := repository.IsStoreOwnedByUser(storeUUID, userUUID.(string))
+    if err != nil || !belongs {
+        c.JSON(http.StatusForbidden, gin.H{
+            "status": "failed",
+            "message": "You cannot delete this store",
+        })
+        return
+    }
+
+    err = repository.SoftDeleteStore(storeUUID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "status":  "failed",
+            "message": "Failed to delete store",
+            "error":   err.Error(),
+        })
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "status":  "success",
+        "message": "Store deleted successfully",
+        "data": gin.H{
+            "store_uuid": store.UUID,
+            "deleted_at": time.Now(),
         },
     })
 }

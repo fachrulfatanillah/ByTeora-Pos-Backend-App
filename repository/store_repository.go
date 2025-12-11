@@ -110,3 +110,14 @@ func GetStoreByUUID(storeUUID string) (models.Store, error) {
 
     return s, err
 }
+
+func SoftDeleteStore(storeUUID string) error {
+    query := `
+        UPDATE store
+        SET deleted_at = NOW()
+        WHERE uuid = ? AND deleted_at IS NULL
+    `
+
+    _, err := config.DB.Exec(query, storeUUID)
+    return err
+}
