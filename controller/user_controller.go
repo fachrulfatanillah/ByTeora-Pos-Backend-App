@@ -3,7 +3,7 @@ package controller
 import (
     "ByTeora-Pos-Backend-App/api/request"
     "ByTeora-Pos-Backend-App/api/response"
-    "ByTeora-Pos-Backend-App/repository"
+    "ByTeora-Pos-Backend-App/service"
     "ByTeora-Pos-Backend-App/utils"
     "github.com/gin-gonic/gin"
     "github.com/google/uuid"
@@ -48,7 +48,7 @@ func CreateUser(c *gin.Context) {
 	}
 
 	// Check email exists
-	exists, err := repository.IsEmailExists(req.Email)
+	exists, err := service.IsEmailExists(req.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.BaseResponse{
 			Status:  "error",
@@ -65,7 +65,7 @@ func CreateUser(c *gin.Context) {
 	}
 
 	// Count users
-	totalUsers, err := repository.CountUsers()
+	totalUsers, err := service.CountUsers()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.BaseResponse{
 			Status:  "error",
@@ -91,7 +91,7 @@ func CreateUser(c *gin.Context) {
 
 	userUUID := uuid.NewString()
 
-	err = repository.CreateUser(
+	err = service.CreateUser(
 		userUUID,
 		req.Email,
 		hashedPassword,
@@ -137,7 +137,7 @@ func AuthLogin(c *gin.Context) {
 		return
 	}
 
-	user, err := repository.GetUserByEmail(req.Email)
+	user, err := service.GetUserByEmail(req.Email)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, response.BaseResponse{
 			Status:  "error",

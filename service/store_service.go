@@ -1,4 +1,4 @@
-package repository
+package service
 
 import (
 	"ByTeora-Pos-Backend-App/config"

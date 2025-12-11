@@ -3,7 +3,7 @@ package controller
 import (
     "ByTeora-Pos-Backend-App/api/request"
     "ByTeora-Pos-Backend-App/api/response"
-    "ByTeora-Pos-Backend-App/repository"
+    "ByTeora-Pos-Backend-App/service"
     "github.com/gin-gonic/gin"
     "github.com/google/uuid"
     "net/http"
@@ -30,7 +30,7 @@ func CreateStore(c *gin.Context) {
         return
     }
 
-    userID, err := repository.GetUserIDByUUID(userUUID.(string))
+    userID, err := service.GetUserIDByUUID(userUUID.(string))
     if err != nil {
         c.JSON(http.StatusBadRequest, gin.H{
             "status":  "failed",
@@ -41,7 +41,7 @@ func CreateStore(c *gin.Context) {
 
     storeUUID := uuid.NewString()
 
-    err = repository.CreateStore(
+    err = service.CreateStore(
         storeUUID,
         userID,
         req.StoreName,
@@ -83,7 +83,7 @@ func GetStoresByUser(c *gin.Context) {
         return
     }
 
-    stores, err := repository.GetStoresByUserUUID(req.UserUUID)
+    stores, err := service.GetStoresByUserUUID(req.UserUUID)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{
             "status":  "failed",
@@ -123,7 +123,7 @@ func UpdateStore(c *gin.Context) {
         return
     }
 
-    oldStore, err := repository.GetStoreByUUID(storeUUID)
+    oldStore, err := service.GetStoreByUUID(storeUUID)
     if err != nil {
         c.JSON(http.StatusNotFound, gin.H{
             "status":  "failed",
@@ -132,7 +132,7 @@ func UpdateStore(c *gin.Context) {
         return
     }
 
-    belongs, err := repository.IsStoreOwnedByUser(storeUUID, userUUID.(string))
+    belongs, err := service.IsStoreOwnedByUser(storeUUID, userUUID.(string))
     if err != nil || !belongs {
         c.JSON(http.StatusForbidden, gin.H{
             "status": "failed",
@@ -164,7 +164,7 @@ func UpdateStore(c *gin.Context) {
         req.Status = oldStore.Status
     }
 
-    err = repository.UpdateStore(storeUUID, req)
+    err = service.UpdateStore(storeUUID, req)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{
             "status": "failed",
@@ -173,7 +173,7 @@ func UpdateStore(c *gin.Context) {
         return
     }
 
-    updatedStore, err := repository.GetStoreByUUID(storeUUID)
+    updatedStore, err := service.GetStoreByUUID(storeUUID)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{
             "status": "failed",
@@ -207,7 +207,7 @@ func DeleteStore(c *gin.Context) {
         return
     }
 
-    store, err := repository.GetStoreByUUID(storeUUID)
+    store, err := service.GetStoreByUUID(storeUUID)
     if err != nil {
         c.JSON(http.StatusNotFound, gin.H{
             "status":  "failed",
@@ -216,7 +216,7 @@ func DeleteStore(c *gin.Context) {
         return
     }
 
-    belongs, err := repository.IsStoreOwnedByUser(storeUUID, userUUID.(string))
+    belongs, err := service.IsStoreOwnedByUser(storeUUID, userUUID.(string))
     if err != nil || !belongs {
         c.JSON(http.StatusForbidden, gin.H{
             "status": "failed",
@@ -225,7 +225,7 @@ func DeleteStore(c *gin.Context) {
         return
     }
 
-    err = repository.SoftDeleteStore(storeUUID)
+    err = service.SoftDeleteStore(storeUUID)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{
             "status":  "failed",
