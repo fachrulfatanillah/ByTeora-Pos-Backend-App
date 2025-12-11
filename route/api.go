@@ -1,25 +1,34 @@
 package route
 
 import (
+	"ByTeora-Pos-Backend-App/controller"
+	"ByTeora-Pos-Backend-App/middleware"
+
 	"github.com/gin-gonic/gin"
 	"net/http"
-
-	"ByTeora-Pos-Backend-App/controller"
 )
 
 func RegisterRoutes(r *gin.Engine) {
 
-	// Route default (homepage API)
+	// Default route
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Welcome to Byteora API",
 		})
 	})
 
-	// API Group
 	api := r.Group("/api/v1")
 
-	// User Routes
+	// ---------- USER ----------
 	api.POST("/users", controller.CreateUser)
+
+	// ---------- AUTH ----------
 	api.POST("/auth/login", controller.AuthLogin)
+
+	// ---------- STORE ----------
+	store := api.Group("/store")
+	store.Use(middleware.AuthMiddleware())
+	{
+		store.POST("/", controller.CreateStore)
+	}
 }
