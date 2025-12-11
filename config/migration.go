@@ -7,6 +7,7 @@ import (
 func RunMigrations() {
 	MigrateUserTable()
 	MigrateStoreTable()
+	MigrateCategoryTable()
 }
 
 func MigrateUserTable() {
@@ -53,6 +54,29 @@ func MigrateStoreTable() {
 	) ENGINE=InnoDB;
 	`
 
+	_, err := DB.Exec(query)
+	if err != nil {
+		log.Fatal("Failed to migrate store table:", err)
+	}
+
+	log.Println("Store table migrated successfully!")
+}
+
+func MigrateCategoryTable() {
+	query := `
+		CREATE TABLE IF NOT EXISTS category (
+		id INT AUTO_INCREMENT PRIMARY KEY,
+		uuid VARCHAR(36) NOT NULL UNIQUE,
+		store_id INT NOT NULL,
+		category_name VARCHAR(150) NOT NULL,
+		description TEXT NULL,
+		status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+		deleted_at TIMESTAMP NULL DEFAULT NULL,
+		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		modified_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+		CONSTRAINT fk_category_store FOREIGN KEY (store_id) REFERENCES store(id)
+	);
+	`
 	_, err := DB.Exec(query)
 	if err != nil {
 		log.Fatal("Failed to migrate store table:", err)

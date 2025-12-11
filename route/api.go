@@ -34,4 +34,11 @@ func RegisterRoutes(r *gin.Engine) {
 		store.PUT("/:store_uuid", controller.UpdateStore)
 		store.DELETE("/:store_uuid", controller.DeleteStore)
 	}
+
+	// ---------- CATEGORY ----------
+	category := api.Group("/stores/:store_uuid/categories")
+	category.Use(middleware.AuthMiddleware())
+	{
+		category.POST("/", controller.CreateCategory)
+	}
 }
