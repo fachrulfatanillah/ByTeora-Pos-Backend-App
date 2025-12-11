@@ -162,3 +162,100 @@ func GetCategoriesByStore(c *gin.Context) {
 		"data":    res,
 	})
 }
+
+func UpdateCategory(c *gin.Context) {
+    storeUUID := c.Param("store_uuid")
+    if storeUUID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "status":  "failed",
+            "message": "Store UUID is required",
+        })
+        return
+    }
+
+    categoryUUID := c.Param("category_uuid")
+    if categoryUUID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "status":  "failed",
+            "message": "Category UUID is required",
+        })
+        return
+    }
+
+    userUUID, exists := c.Get("user_uuid")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{
+            "status":  "failed",
+            "message": "Unauthorized",
+        })
+        return
+    }
+
+    oldCategory, err := service.GetCategoryByUUID(categoryUUID)
+    if err != nil {
+        c.JSON(http.StatusNotFound, gin.H{
+            "status":  "failed",
+            "message": "Category not found",
+        })
+        return
+    }
+
+    belongs, err := service.IsStoreOwnedByUser(storeUUID, userUUID.(string))
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "status":  "failed",
+            "message": "Failed to check store ownership",
+        })
+        return
+    }
+    if !belongs {
+        c.JSON(http.StatusForbidden, gin.H{
+            "status":  "failed",
+            "message": "You are not allowed to edit this category",
+        })
+        return
+    }
+
+    var req request.UpdateCategoryRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "status":  "failed",
+            "message": "Invalid request body",
+            "error":   err.Error(),
+        })
+        return
+    }
+
+    if req.CategoryName == "" {
+        req.CategoryName = oldCategory.CategoryName
+    }
+    if req.Description == "" {
+        req.Description = oldCategory.Description
+    }
+    if req.Status == "" {
+        req.Status = oldCategory.Status
+    }
+
+    err = service.UpdateCategory(categoryUUID, req)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "status":  "failed",
+            "message": "Failed to update category",
+        })
+        return
+    }
+
+    res := response.UpdateCategoryResponse{
+        CategoryUUID: oldCategory.UUID,
+        StoreUUID:    storeUUID,
+        CategoryName: req.CategoryName,
+        Description:  req.Description,
+        Status:       req.Status,
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "status":  "success",
+        "message": "Category updated successfully",
+        "data":    res,
+    })
+}

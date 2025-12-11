@@ -18,3 +18,11 @@ type CategoryResponse struct {
 	CreatedAt    time.Time `json:"created_at"`
 	ModifiedAt   time.Time `json:"modified_at"`
 }
+
+type UpdateCategoryResponse struct {
+    CategoryUUID string `json:"category_uuid"`
+    StoreUUID    string `json:"store_uuid"`
+    CategoryName string `json:"category_name"`
+    Description  string `json:"description,omitempty"`
+    Status       string `json:"status"`
+}
