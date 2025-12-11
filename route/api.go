@@ -40,5 +40,6 @@ func RegisterRoutes(r *gin.Engine) {
 	category.Use(middleware.AuthMiddleware())
 	{
 		category.POST("/", controller.CreateCategory)
+		category.GET("/", controller.GetCategoriesByStore)
 	}
 }
