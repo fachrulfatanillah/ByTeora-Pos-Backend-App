@@ -30,5 +30,6 @@ func RegisterRoutes(r *gin.Engine) {
 	store.Use(middleware.AuthMiddleware())
 	{
 		store.POST("/", controller.CreateStore)
+		store.POST("/list", controller.GetStoresByUser)
 	}
 }

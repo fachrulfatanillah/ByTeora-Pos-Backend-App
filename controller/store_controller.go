@@ -70,3 +70,42 @@ func CreateStore(c *gin.Context) {
         "data":    res,
     })
 }
+
+func GetStoresByUser(c *gin.Context) {
+    var req request.GetStoreRequest
+    
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "status":  "failed",
+            "message": "invalid request body",
+        })
+        return
+    }
+
+    stores, err := repository.GetStoresByUserUUID(req.UserUUID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "status":  "failed",
+            "message": "Failed to fetch stores",
+        })
+        return
+    }
+
+    // Convert ke response struct
+    var storeResponses []response.StoreResponse
+    for _, s := range stores {
+        storeResponses = append(storeResponses, response.StoreResponse{
+            StoreUUID:   s.UUID,
+            StoreName:   s.StoreName,
+            Address:     s.Address,
+            PhoneNumber: s.PhoneNumber,
+            Status:      s.Status,
+        })
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "status":  "success",
+        "message": "Stores fetched successfully",
+        "data":    storeResponses,
+    })
+}
