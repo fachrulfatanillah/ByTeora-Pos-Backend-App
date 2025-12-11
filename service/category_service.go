@@ -4,6 +4,7 @@ import (
 	"ByTeora-Pos-Backend-App/config"
 	"ByTeora-Pos-Backend-App/models"
 	"ByTeora-Pos-Backend-App/api/request"
+	"time"
 )
 
 func GetStoreIDByUUID(storeUUID string) (int, error) {
@@ -91,5 +92,16 @@ func UpdateCategory(categoryUUID string, data request.UpdateCategoryRequest) err
 		categoryUUID,
 	)
 
+	return err
+}
+
+func SoftDeleteCategory(categoryUUID string) error {
+	query := `
+		UPDATE category
+		SET deleted_at = ?, modified_at = NOW()
+		WHERE uuid = ? AND deleted_at IS NULL
+	`
+
+	_, err := config.DB.Exec(query, time.Now(), categoryUUID)
 	return err
 }

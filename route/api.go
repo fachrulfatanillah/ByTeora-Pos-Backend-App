@@ -42,5 +42,6 @@ func RegisterRoutes(r *gin.Engine) {
 		category.POST("/", controller.CreateCategory)
 		category.GET("/", controller.GetCategoriesByStore)
 		category.PUT("/:category_uuid", controller.UpdateCategory)
+		category.DELETE("/:category_uuid", controller.DeleteCategory)
 	}
 }

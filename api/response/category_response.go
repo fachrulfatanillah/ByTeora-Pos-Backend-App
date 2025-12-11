@@ -26,3 +26,8 @@ type UpdateCategoryResponse struct {
     Description  string `json:"description,omitempty"`
     Status       string `json:"status"`
 }
+
+type DeleteCategoryResponse struct {
+	CategoryUUID string `json:"category_uuid"`
+	StoreUUID    string `json:"store_uuid"`
+}

@@ -259,3 +259,74 @@ func UpdateCategory(c *gin.Context) {
         "data":    res,
     })
 }
+
+func DeleteCategory(c *gin.Context) {
+	storeUUID := c.Param("store_uuid")
+	categoryUUID := c.Param("category_uuid")
+
+	if storeUUID == "" || categoryUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "failed",
+			"message": "store_uuid and category_uuid are required",
+		})
+		return
+	}
+
+	userUUID, exists := c.Get("user_uuid")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "failed",
+			"message": "Unauthorized",
+		})
+		return
+	}
+
+	// Ambil category
+	_, err := service.GetCategoryByUUID(categoryUUID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  "failed",
+			"message": "Category not found",
+		})
+		return
+	}
+
+	// Pastikan category milik store yang dimiliki user
+	belongs, err := service.IsStoreOwnedByUser(storeUUID, userUUID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "failed",
+			"message": "Failed checking store ownership",
+		})
+		return
+	}
+
+	if !belongs {
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "failed",
+			"message": "You are not allowed to delete this category",
+		})
+		return
+	}
+
+	// Soft delete
+	err = service.SoftDeleteCategory(categoryUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "failed",
+			"message": "Failed to delete category",
+		})
+		return
+	}
+
+	res := response.DeleteCategoryResponse{
+		CategoryUUID: categoryUUID,
+		StoreUUID:    storeUUID,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Category deleted successfully",
+		"data":    res,
+	})
+}
