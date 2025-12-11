@@ -16,3 +16,11 @@ type StoreResponse struct {
     PhoneNumber string `json:"phone_number"`
     Status      string `json:"status"`
 }
+
+type UpdateStoreResponse struct {
+    StoreUUID   string `json:"store_uuid"`
+    StoreName   string `json:"store_name"`
+    Address     string `json:"address"`
+    PhoneNumber string `json:"phone_number"`
+    Status      string `json:"status"`
+}

@@ -31,5 +31,6 @@ func RegisterRoutes(r *gin.Engine) {
 	{
 		store.POST("/", controller.CreateStore)
 		store.POST("/list", controller.GetStoresByUser)
+		store.PUT("/:store_uuid", controller.UpdateStore)
 	}
 }

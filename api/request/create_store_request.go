@@ -9,3 +9,10 @@ type CreateStoreRequest struct {
 type GetStoreRequest struct {
     UserUUID string `json:"user_uuid" binding:"required"`
 }
+
+type UpdateStoreRequest struct {
+    StoreName   string `json:"store_name"`
+    Address     string `json:"address"`
+    PhoneNumber string `json:"phone_number"`
+    Status      string `json:"status"`
+}

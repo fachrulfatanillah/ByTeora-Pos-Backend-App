@@ -3,6 +3,7 @@ package repository
 import (
 	"ByTeora-Pos-Backend-App/config"
 	"ByTeora-Pos-Backend-App/models"
+	"ByTeora-Pos-Backend-App/api/request"
 )
 
 func GetUserIDByUUID(userUUID string) (int, error) {
@@ -56,4 +57,56 @@ func GetStoresByUserUUID(userUUID string) ([]models.Store, error) {
 	}
 
 	return stores, nil
+}
+
+func IsStoreOwnedByUser(storeUUID, userUUID string) (bool, error) {
+    query := `
+        SELECT COUNT(*)
+        FROM store s
+        JOIN user u ON s.user_id = u.id
+        WHERE s.uuid = ? AND u.uuid = ? AND s.deleted_at IS NULL
+    `
+
+    var count int
+    err := config.DB.QueryRow(query, storeUUID, userUUID).Scan(&count)
+    return count > 0, err
+}
+
+func UpdateStore(storeUUID string, data request.UpdateStoreRequest) error {
+    query := `
+        UPDATE store
+        SET store_name = ?, address = ?, phone_number = ?, status = ?, modified_at = NOW()
+        WHERE uuid = ?
+    `
+
+    _, err := config.DB.Exec(
+        query,
+        data.StoreName,
+        data.Address,
+        data.PhoneNumber,
+        data.Status,
+        storeUUID,
+    )
+
+    return err
+}
+
+func GetStoreByUUID(storeUUID string) (models.Store, error) {
+    var s models.Store
+
+    query := `
+        SELECT uuid, store_name, address, phone_number, status
+        FROM store
+        WHERE uuid = ? AND deleted_at IS NULL
+    `
+
+    err := config.DB.QueryRow(query, storeUUID).Scan(
+        &s.UUID,
+        &s.StoreName,
+        &s.Address,
+        &s.PhoneNumber,
+        &s.Status,
+    )
+
+    return s, err
 }
