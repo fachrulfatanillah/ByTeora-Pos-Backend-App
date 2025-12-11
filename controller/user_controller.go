@@ -114,7 +114,6 @@ func CreateUser(c *gin.Context) {
 		Data: response.UserResponse{
 			UUID:  userUUID,
 			Email: req.Email,
-			Role:  role,
 		},
 	})
 }
@@ -169,7 +168,6 @@ func AuthLogin(c *gin.Context) {
 		Data: response.UserResponse{
 			UUID:  user.UUID,
 			Email: user.Email,
-			Role:  user.Role,
 			Token: token,
 		},
 	})
