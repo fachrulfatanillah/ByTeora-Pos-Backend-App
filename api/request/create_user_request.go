@@ -6,3 +6,8 @@ type CreateUserRequest struct {
     NamaDepan    string `json:"nama_depan"`
     NamaBelakang string `json:"nama_belakang"`
 }
+
+type LoginRequest struct {
+    Email    string `json:"email"`
+    Password string `json:"password"`
+}
