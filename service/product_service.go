@@ -4,7 +4,6 @@ import (
 	"ByTeora-Pos-Backend-App/config"
 	"ByTeora-Pos-Backend-App/api/request"
 	"ByTeora-Pos-Backend-App/api/response"
-	"database/sql"
 )
 
 func CreateProduct(productUUID string, storeID int, categoryID *int, req request.CreateProductRequest, status string) error {
@@ -77,7 +76,6 @@ func GetProductsByStoreUUID(storeUUID string) ([]response.ProductItemResponse, e
 			return nil, err
 		}
 
-		// Ambil stok
 		stock, err := GetStockByProductID(productID)
 		if err != nil {
 			return nil, err
@@ -224,22 +222,17 @@ func IsProductBelongsToStore(productUUID string, storeID int) (bool, error) {
 }
 
 func GetStockByProductID(productID int) (int, error) {
-	var stock sql.NullInt64
+    var stock int
 
-	err := config.DB.QueryRow(`
-		SELECT 
-			COALESCE(SUM(stock_in), 0) - COALESCE(SUM(stock_out), 0) AS current_stock
-		FROM product_stocks
-		WHERE product_id = ? AND deleted_at IS NULL
-	`, productID).Scan(&stock)
+    err := config.DB.QueryRow(`
+        SELECT COALESCE(SUM(stock_in) - SUM(stock_out), 0)
+        FROM product_stocks
+        WHERE product_id = ? AND deleted_at IS NULL
+    `, productID).Scan(&stock)
 
-	if err != nil {
-		return 0, err
-	}
+    if err != nil {
+        return 0, err
+    }
 
-	if stock.Valid {
-		return int(stock.Int64), nil
-	}
-
-	return 0, nil
+    return stock, nil
 }
