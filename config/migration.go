@@ -9,6 +9,7 @@ func RunMigrations() {
 	MigrateStoreTable()
 	MigrateCategoryTable()
 	MigrateProductTable()
+	MigrateProductStockTable()
 }
 
 func MigrateUserTable() {
@@ -105,6 +106,40 @@ func MigrateProductTable() {
 			modified_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			FOREIGN KEY (store_id) REFERENCES store(id),
 			FOREIGN KEY (category_id) REFERENCES category(id)
+		);
+	`
+	_, err := DB.Exec(query)
+	if err != nil {
+		log.Fatal("Failed to migrate store table:", err)
+	}
+
+	log.Println("Store table migrated successfully!")
+}
+
+func MigrateProductStockTable() {
+	query := `
+		CREATE TABLE IF NOT EXISTS product_stocks (
+			id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+			uuid VARCHAR(36) NOT NULL UNIQUE,
+
+			product_id INT NOT NULL,
+			store_id INT NOT NULL,
+
+			stock_in INT NOT NULL DEFAULT 0,
+			stock_out INT NOT NULL DEFAULT 0,
+			current_stock INT NOT NULL DEFAULT 0,
+
+			status VARCHAR(20) NOT NULL DEFAULT 'active',
+
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			modified_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			deleted_at TIMESTAMP NULL,
+
+			CONSTRAINT fk_product_stocks_product_id
+				FOREIGN KEY (product_id) REFERENCES product(id),
+
+			CONSTRAINT fk_product_stocks_store_id
+				FOREIGN KEY (store_id) REFERENCES store(id)
 		);
 	`
 	_, err := DB.Exec(query)

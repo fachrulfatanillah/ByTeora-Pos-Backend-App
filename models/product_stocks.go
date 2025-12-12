@@ -1,8 +1,8 @@
-package model
+package models
 
 import "time"
 
-type ProductStock struct {
+type ProductStocks struct {
 	ID           int        `db:"id"`
 	UUID         string     `db:"uuid"`
 	ProductID    int        `db:"product_id"`
