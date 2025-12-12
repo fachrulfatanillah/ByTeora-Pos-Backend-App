@@ -76,3 +76,112 @@ func GetProductsByStoreUUID(storeUUID string) ([]response.ProductItemResponse, e
 
 	return products, nil
 }
+
+func GetProductByUUID(productUUID string, storeID int) (*response.UpdateProductResponse, error) {
+	query := `
+		SELECT 
+			p.uuid,
+			s.uuid,
+			c.uuid,
+			p.product_name,
+			p.sku,
+			p.barcode,
+			p.description,
+			p.price,
+			p.cost,
+			p.status,
+			DATE_FORMAT(p.modified_at, '%Y-%m-%d %H:%i:%s')
+		FROM product p
+		JOIN store s ON s.id = p.store_id
+		LEFT JOIN category c ON c.id = p.category_id
+		WHERE p.uuid = ? AND p.store_id = ? AND p.deleted_at IS NULL
+	`
+
+	row := config.DB.QueryRow(query, productUUID, storeID)
+
+	var res response.UpdateProductResponse
+	err := row.Scan(
+		&res.ProductUUID,
+		&res.StoreUUID,
+		&res.CategoryUUID,
+		&res.ProductName,
+		&res.SKU,
+		&res.Barcode,
+		&res.Description,
+		&res.Price,
+		&res.Cost,
+		&res.Status,
+		&res.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func UpdateProductPartial(productUUID string, storeID int, req request.UpdateProductRequest) error {
+	query := "UPDATE product SET "
+	args := []interface{}{}
+	cols := []string{}
+
+	if req.CategoryUUID != nil {
+		var categoryID int
+		_ = config.DB.QueryRow("SELECT id FROM category WHERE uuid = ?", *req.CategoryUUID).Scan(&categoryID)
+
+		cols = append(cols, "category_id = ?")
+		args = append(args, categoryID)
+	}
+
+	if req.ProductName != nil {
+		cols = append(cols, "product_name = ?")
+		args = append(args, *req.ProductName)
+	}
+	if req.SKU != nil {
+		cols = append(cols, "sku = ?")
+		args = append(args, *req.SKU)
+	}
+	if req.Barcode != nil {
+		cols = append(cols, "barcode = ?")
+		args = append(args, *req.Barcode)
+	}
+	if req.Description != nil {
+		cols = append(cols, "description = ?")
+		args = append(args, *req.Description)
+	}
+	if req.Price != nil {
+		cols = append(cols, "price = ?")
+		args = append(args, *req.Price)
+	}
+	if req.Cost != nil {
+		cols = append(cols, "cost = ?")
+		args = append(args, *req.Cost)
+	}
+	if req.Status != nil {
+		cols = append(cols, "status = ?")
+		args = append(args, *req.Status)
+	}
+
+	if len(cols) == 0 {
+		return nil
+	}
+
+	// Tambahkan modified_at
+	cols = append(cols, "modified_at = NOW()")
+
+	for i, col := range cols {
+		if i == 0 {
+			query += col
+		} else {
+			query += ", " + col
+		}
+	}
+
+	query += " WHERE uuid = ? AND store_id = ? AND deleted_at IS NULL"
+
+	args = append(args, productUUID, storeID)
+
+	_, err := config.DB.Exec(query, args...)
+	return err
+}

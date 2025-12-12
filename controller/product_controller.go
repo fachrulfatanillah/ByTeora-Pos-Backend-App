@@ -157,3 +157,79 @@ func GetAllProducts(c *gin.Context) {
 		},
 	})
 }
+
+func UpdateProductHandler(c *gin.Context) {
+	storeUUID := c.Param("store_uuid")
+	productUUID := c.Param("product_uuid")
+
+	if storeUUID == "" || productUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "failed",
+			"message": "store_uuid and product_uuid are required",
+		})
+		return
+	}
+
+	userUUID, exists := c.Get("user_uuid")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "failed",
+			"message": "Unauthorized",
+		})
+		return
+	}
+
+	belongs, err := service.IsStoreOwnedByUser(storeUUID, userUUID.(string))
+	if err != nil || !belongs {
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "failed",
+			"message": "You are not allowed to access this store",
+		})
+		return
+	}
+
+	storeID, err := service.GetStoreIDByUUID(storeUUID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "failed",
+			"message": "Store not found",
+		})
+		return
+	}
+
+	var req request.UpdateProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "failed",
+			"message": "Invalid JSON",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	_, err = service.GetProductByUUID(productUUID, storeID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  "failed",
+			"message": "Product not found",
+		})
+		return
+	}
+
+	err = service.UpdateProductPartial(productUUID, storeID, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "failed",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	updated, _ := service.GetProductByUUID(productUUID, storeID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Product updated successfully",
+		"data":    updated,
+	})
+}
