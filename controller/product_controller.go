@@ -1,0 +1,113 @@
+package controller
+
+import (
+	"net/http"
+
+	"ByTeora-Pos-Backend-App/api/request"
+	"ByTeora-Pos-Backend-App/api/response"
+	"ByTeora-Pos-Backend-App/service"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+func CreateProduct(c *gin.Context) {
+	storeUUID := c.Param("store_uuid")
+	if storeUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "failed",
+			"message": "store_uuid is required",
+		})
+		return
+	}
+
+	userUUID, exists := c.Get("user_uuid")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "failed",
+			"message": "Unauthorized",
+		})
+		return
+	}
+
+	belongs, err := service.IsStoreOwnedByUser(storeUUID, userUUID.(string))
+	if err != nil || !belongs {
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "failed",
+			"message": "You are not allowed to add product to this store",
+		})
+		return
+	}
+
+	var req request.CreateProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "failed",
+			"message": "Invalid request body",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	storeID, err := service.GetStoreIDByUUID(storeUUID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  "failed",
+			"message": "Store not found",
+		})
+		return
+	}
+
+	var categoryID *int
+	if req.CategoryUUID != nil {
+		id, err := service.GetCategoryIDByUUID(*req.CategoryUUID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "failed",
+				"message": "Category not found",
+			})
+			return
+		}
+		categoryID = &id
+	}
+
+	productUUID := uuid.NewString()
+
+	status := "active"
+	if req.Status != nil {
+		status = *req.Status
+	}
+
+	err = service.CreateProduct(productUUID, storeID, categoryID, req, status)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "failed",
+			"message": "Failed to create product",
+		})
+		return
+	}
+
+	var categoryUUID *string
+	if req.CategoryUUID != nil {
+		categoryUUID = req.CategoryUUID
+	}
+
+	res := response.CreateProductResponse{
+		ProductUUID:  productUUID,
+		StoreUUID:    storeUUID,
+		CategoryUUID: categoryUUID,
+		ProductName:  req.ProductName,
+		SKU:          req.SKU,
+		Barcode:      req.Barcode,
+		Description:  req.Description,
+		Price:        req.Price,
+		Cost:         req.Cost,
+		Status:       status,
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"status":  "success",
+		"message": "Product created successfully",
+		"data":    res,
+	})
+}
