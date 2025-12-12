@@ -128,3 +128,49 @@ func GetAllProductStockLogsHandler(c *gin.Context) {
         "data":    result,
     })
 }
+
+func GetProductStockLogsByProductHandler(c *gin.Context) {
+    storeUUID := c.Param("store_uuid")
+    productUUID := c.Param("product_uuid")
+
+    if storeUUID == "" || productUUID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "status":  "error",
+            "message": "store_uuid and product_uuid are required",
+        })
+        return
+    }
+
+    userUUID, exists := c.Get("user_uuid")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{
+            "status":  "error",
+            "message": "Unauthorized",
+        })
+        return
+    }
+
+    owned, err := service.IsStoreOwnedByUser(storeUUID, userUUID.(string))
+    if err != nil || !owned {
+        c.JSON(http.StatusForbidden, gin.H{
+            "status":  "error",
+            "message": "You are not allowed to access this store",
+        })
+        return
+    }
+
+    logs, err := service.GetProductStockLogsByProduct(storeUUID, productUUID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "status":  "error",
+            "message": "Failed to fetch product stock logs",
+        })
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "status":  "success",
+        "message": "Product stock logs fetched successfully",
+        "data":    logs,
+    })
+}

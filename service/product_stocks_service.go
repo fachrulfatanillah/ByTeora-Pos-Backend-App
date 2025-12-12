@@ -140,13 +140,6 @@ func GetAllProductStockLogs(storeUUID string) ([]response.ProductStockLogRespons
             return nil, err
         }
 
-        current, err := GetCurrentStockByUUID(item.ProductUUID, item.StoreUUID)
-        if err != nil {
-            return nil, err
-        }
-
-        item.CurrentStock = current
-
         results = append(results, item)
     }
 
@@ -187,4 +180,50 @@ func CheckStoreOwnership(userID int, storeUUID string) (bool, error) {
     }
 
     return count > 0, nil
+}
+
+func GetProductStockLogsByProduct(storeUUID, productUUID string) ([]response.ProductStockLogResponse, error) {
+    query := `
+        SELECT 
+            ps.uuid,
+            p.uuid,
+            s.uuid,
+            ps.stock_in,
+            ps.stock_out,
+            ps.status,
+            ps.created_at
+        FROM product_stocks ps
+        JOIN product p ON ps.product_id = p.id
+        JOIN store s ON ps.store_id = s.id
+        WHERE s.uuid = ? AND p.uuid = ?
+        ORDER BY ps.created_at DESC
+    `
+
+    rows, err := config.DB.Query(query, storeUUID, productUUID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var results []response.ProductStockLogResponse
+
+    for rows.Next() {
+        var item response.ProductStockLogResponse
+        err := rows.Scan(
+            &item.StockUUID,
+            &item.ProductUUID,
+            &item.StoreUUID,
+            &item.StockIn,
+            &item.StockOut,
+            &item.Status,
+            &item.CreatedAt,
+        )
+        if err != nil {
+            return nil, err
+        }
+
+        results = append(results, item)
+    }
+
+    return results, nil
 }
