@@ -111,3 +111,49 @@ func CreateProduct(c *gin.Context) {
 		"data":    res,
 	})
 }
+
+func GetAllProducts(c *gin.Context) {
+	storeUUID := c.Param("store_uuid")
+	if storeUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "failed",
+			"message": "store_uuid is required",
+		})
+		return
+	}
+
+	userUUID, exists := c.Get("user_uuid")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "failed",
+			"message": "Unauthorized",
+		})
+		return
+	}
+
+	belongs, err := service.IsStoreOwnedByUser(storeUUID, userUUID.(string))
+	if err != nil || !belongs {
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "failed",
+			"message": "You are not allowed to access this store's products",
+		})
+		return
+	}
+
+	products, err := service.GetProductsByStoreUUID(storeUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "failed",
+			"message": "Failed to fetch products",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Products fetched successfully",
+		"data": gin.H{
+			"products": products,
+		},
+	})
+}

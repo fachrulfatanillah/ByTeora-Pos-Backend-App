@@ -50,5 +50,6 @@ func RegisterRoutes(r *gin.Engine) {
 		product.Use(middleware.AuthMiddleware())
 		{
 			product.POST("/", controller.CreateProduct)
+			product.GET("/", controller.GetAllProducts)
 		}
 	}
