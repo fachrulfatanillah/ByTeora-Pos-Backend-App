@@ -47,11 +47,19 @@ func RegisterRoutes(r *gin.Engine) {
 
 	// ---------- PRODUCT ----------
 	product := api.Group("/stores/:store_uuid/products")
-		product.Use(middleware.AuthMiddleware())
-		{
-			product.POST("/", controller.CreateProduct)
-			product.GET("/", controller.GetAllProducts)
-			product.PUT("/:product_uuid", controller.UpdateProductHandler)
-			product.DELETE("/:product_uuid", controller.DeleteProductHandler)
-		}
+	product.Use(middleware.AuthMiddleware())
+	{
+		product.POST("/", controller.CreateProduct)
+		product.GET("/", controller.GetAllProducts)
+		product.PUT("/:product_uuid", controller.UpdateProductHandler)
+		product.DELETE("/:product_uuid", controller.DeleteProductHandler)
 	}
+	
+
+	// ---------- PRODUCT STOCKS ----------
+	product_stocks := api.Group("/stores/:store_uuid/products/:product_uuid/stocks")
+	product_stocks.Use(middleware.AuthMiddleware())
+	{
+		product_stocks.POST("/", controller.CreateProductStockHandler)
+	}
+}
