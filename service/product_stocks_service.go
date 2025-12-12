@@ -98,3 +98,93 @@ func GetCurrentStock(productID, storeID int) (int, error) {
 
 	return totalIn - totalOut, nil
 }
+
+func GetAllProductStockLogs(storeUUID string) ([]response.ProductStockLogResponse, error) {
+    query := `
+        SELECT 
+            ps.uuid,
+            p.uuid,
+            s.uuid,
+            ps.stock_in,
+            ps.stock_out,
+            ps.status,
+            ps.created_at
+        FROM product_stocks ps
+        JOIN product p ON ps.product_id = p.id
+        JOIN store s ON ps.store_id = s.id
+        WHERE s.uuid = ?
+        ORDER BY ps.created_at DESC
+    `
+
+    rows, err := config.DB.Query(query, storeUUID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var results []response.ProductStockLogResponse
+
+    for rows.Next() {
+        var item response.ProductStockLogResponse
+
+        err := rows.Scan(
+            &item.StockUUID,
+            &item.ProductUUID,
+            &item.StoreUUID,
+            &item.StockIn,
+            &item.StockOut,
+            &item.Status,
+            &item.CreatedAt,
+        )
+        if err != nil {
+            return nil, err
+        }
+
+        current, err := GetCurrentStockByUUID(item.ProductUUID, item.StoreUUID)
+        if err != nil {
+            return nil, err
+        }
+
+        item.CurrentStock = current
+
+        results = append(results, item)
+    }
+
+    return results, nil
+}
+
+func GetCurrentStockByUUID(productUUID, storeUUID string) (int, error) {
+    query := `
+        SELECT 
+            SUM(stock_in) - SUM(stock_out) AS current_stock
+        FROM product_stocks ps
+        JOIN product p ON ps.product_id = p.id
+        JOIN store s ON ps.store_id = s.id
+        WHERE p.uuid = ? AND s.uuid = ?
+    `
+
+    var currentStock int
+    err := config.DB.QueryRow(query, productUUID, storeUUID).Scan(&currentStock)
+    if err != nil {
+        return 0, err
+    }
+
+    return currentStock, nil
+}
+
+func CheckStoreOwnership(userID int, storeUUID string) (bool, error) {
+    var count int
+
+    query := `
+        SELECT COUNT(*)
+        FROM store
+        WHERE uuid = ? AND user_id = ? AND deleted_at IS NULL
+    `
+
+    err := config.DB.QueryRow(query, storeUUID, userID).Scan(&count)
+    if err != nil {
+        return false, err
+    }
+
+    return count > 0, nil
+}

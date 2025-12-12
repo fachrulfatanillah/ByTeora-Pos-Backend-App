@@ -57,9 +57,10 @@ func RegisterRoutes(r *gin.Engine) {
 	
 
 	// ---------- PRODUCT STOCKS ----------
-	product_stocks := api.Group("/stores/:store_uuid/products/:product_uuid/stocks")
+	product_stocks := api.Group("/stores/:store_uuid/products")
 	product_stocks.Use(middleware.AuthMiddleware())
 	{
-		product_stocks.POST("/", controller.CreateProductStockHandler)
+		product_stocks.POST("/:product_uuid/stocks/", controller.CreateProductStockHandler)
+		product_stocks.GET("/stocks/log", controller.GetAllProductStockLogsHandler)
 	}
 }
