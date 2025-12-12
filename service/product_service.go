@@ -4,6 +4,7 @@ import (
 	"ByTeora-Pos-Backend-App/config"
 	"ByTeora-Pos-Backend-App/api/request"
 	"ByTeora-Pos-Backend-App/api/response"
+	"database/sql"
 )
 
 func CreateProduct(productUUID string, storeID int, categoryID *int, req request.CreateProductRequest, status string) error {
@@ -22,8 +23,10 @@ func GetCategoryIDByUUID(categoryUUID string) (int, error) {
 }
 
 func GetProductsByStoreUUID(storeUUID string) ([]response.ProductItemResponse, error) {
+
 	rows, err := config.DB.Query(`
 		SELECT 
+			p.id,
 			p.uuid AS product_uuid,
 			s.uuid AS store_uuid,
 			c.uuid AS category_uuid,
@@ -42,7 +45,6 @@ func GetProductsByStoreUUID(storeUUID string) ([]response.ProductItemResponse, e
 		WHERE s.uuid = ? AND p.deleted_at IS NULL
 		ORDER BY p.created_at DESC
 	`, storeUUID)
-
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +53,13 @@ func GetProductsByStoreUUID(storeUUID string) ([]response.ProductItemResponse, e
 	var products []response.ProductItemResponse
 
 	for rows.Next() {
-		var product response.ProductItemResponse
+		var (
+			productID int
+			product   response.ProductItemResponse
+		)
+
 		err := rows.Scan(
+			&productID,
 			&product.ProductUUID,
 			&product.StoreUUID,
 			&product.CategoryUUID,
@@ -66,10 +73,16 @@ func GetProductsByStoreUUID(storeUUID string) ([]response.ProductItemResponse, e
 			&product.CreatedAt,
 			&product.UpdatedAt,
 		)
-
 		if err != nil {
 			return nil, err
 		}
+
+		// Ambil stok
+		stock, err := GetStockByProductID(productID)
+		if err != nil {
+			return nil, err
+		}
+		product.Stock = stock
 
 		products = append(products, product)
 	}
@@ -208,4 +221,25 @@ func IsProductBelongsToStore(productUUID string, storeID int) (bool, error) {
 	}
 
 	return count > 0, nil
+}
+
+func GetStockByProductID(productID int) (int, error) {
+	var stock sql.NullInt64
+
+	err := config.DB.QueryRow(`
+		SELECT 
+			COALESCE(SUM(stock_in), 0) - COALESCE(SUM(stock_out), 0) AS current_stock
+		FROM product_stocks
+		WHERE product_id = ? AND deleted_at IS NULL
+	`, productID).Scan(&stock)
+
+	if err != nil {
+		return 0, err
+	}
+
+	if stock.Valid {
+		return int(stock.Int64), nil
+	}
+
+	return 0, nil
 }

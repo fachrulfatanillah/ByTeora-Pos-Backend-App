@@ -24,6 +24,7 @@ type ProductItemResponse struct {
 	Price        float64  `json:"price"`
 	Cost         *float64 `json:"cost,omitempty"`
 	Status       string   `json:"status"`
+	Stock int `json:"stock"`
 	CreatedAt    string   `json:"created_at"`
 	UpdatedAt    string   `json:"updated_at"`
 }
