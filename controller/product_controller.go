@@ -233,3 +233,74 @@ func UpdateProductHandler(c *gin.Context) {
 		"data":    updated,
 	})
 }
+
+func DeleteProductHandler(c *gin.Context) {
+	storeUUID := c.Param("store_uuid")
+	productUUID := c.Param("product_uuid")
+
+	if storeUUID == "" || productUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "store_uuid and product_uuid are required",
+		})
+		return
+	}
+
+	userUUID, exists := c.Get("user_uuid")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "Unauthorized",
+		})
+		return
+	}
+
+	belongs, err := service.IsStoreOwnedByUser(storeUUID, userUUID.(string))
+	if err != nil || !belongs {
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "error",
+			"message": "You are not allowed to access this store",
+		})
+		return
+	}
+
+	storeID, err := service.GetStoreIDByUUID(storeUUID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  "error",
+			"message": "Store not found",
+		})
+		return
+	}
+
+	existsProduct, err := service.IsProductBelongsToStore(productUUID, storeID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Failed to check product",
+		})
+		return
+	}
+
+	if !existsProduct {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  "error",
+			"message": "Product not found",
+		})
+		return
+	}
+
+	err = service.SoftDeleteProduct(productUUID, storeID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Failed to delete product",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Product deleted successfully",
+	})
+}

@@ -167,7 +167,6 @@ func UpdateProductPartial(productUUID string, storeID int, req request.UpdatePro
 		return nil
 	}
 
-	// Tambahkan modified_at
 	cols = append(cols, "modified_at = NOW()")
 
 	for i, col := range cols {
@@ -184,4 +183,29 @@ func UpdateProductPartial(productUUID string, storeID int, req request.UpdatePro
 
 	_, err := config.DB.Exec(query, args...)
 	return err
+}
+
+func SoftDeleteProduct(productUUID string, storeID int) error {
+	query := `
+		UPDATE product 
+		SET deleted_at = NOW() 
+		WHERE uuid = ? AND store_id = ? AND deleted_at IS NULL
+	`
+
+	_, err := config.DB.Exec(query, productUUID, storeID)
+	return err
+}
+
+func IsProductBelongsToStore(productUUID string, storeID int) (bool, error) {
+	var count int
+	err := config.DB.QueryRow(`
+		SELECT COUNT(*) FROM product 
+		WHERE uuid = ? AND store_id = ? AND deleted_at IS NULL
+	`, productUUID, storeID).Scan(&count)
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }

@@ -52,5 +52,6 @@ func RegisterRoutes(r *gin.Engine) {
 			product.POST("/", controller.CreateProduct)
 			product.GET("/", controller.GetAllProducts)
 			product.PUT("/:product_uuid", controller.UpdateProductHandler)
+			product.DELETE("/:product_uuid", controller.DeleteProductHandler)
 		}
 	}
