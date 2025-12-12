@@ -227,3 +227,40 @@ func GetProductStockLogsByProduct(storeUUID, productUUID string) ([]response.Pro
 
     return results, nil
 }
+
+func GetAllProductStocks(storeUUID string) ([]response.ProductStockCurrentResponse, error) {
+	query := `
+		SELECT 
+			p.uuid AS product_uuid,
+			s.uuid AS store_uuid,
+			COALESCE(SUM(ps.stock_in), 0) - COALESCE(SUM(ps.stock_out), 0) AS current_stock,
+			COALESCE(MAX(ps.uuid), '') AS stock_uuid
+		FROM product p
+		JOIN store s ON p.store_id = s.id
+		LEFT JOIN product_stocks ps ON ps.product_id = p.id AND ps.deleted_at IS NULL
+		WHERE s.uuid = ?
+		  AND p.deleted_at IS NULL
+		GROUP BY p.id, s.id
+		ORDER BY p.created_at DESC
+	`
+
+	rows, err := config.DB.Query(query, storeUUID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []response.ProductStockCurrentResponse
+
+	for rows.Next() {
+		var item response.ProductStockCurrentResponse
+		err := rows.Scan(&item.ProductUUID, &item.StoreUUID, &item.CurrentStock, &item.StockUUID)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, item)
+	}
+
+	return results, nil
+}
+

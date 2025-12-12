@@ -19,3 +19,10 @@ type ProductStockLogResponse struct {
     Status      string `json:"status"`
     CreatedAt   string `json:"created_at"`
 }
+
+type ProductStockCurrentResponse struct {
+	StockUUID    string `json:"stock_uuid"`
+	ProductUUID  string `json:"product_uuid"`
+	StoreUUID    string `json:"store_uuid"`
+	CurrentStock int    `json:"current_stock"`
+}

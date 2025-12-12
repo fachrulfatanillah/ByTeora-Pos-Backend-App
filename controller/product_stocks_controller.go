@@ -174,3 +174,40 @@ func GetProductStockLogsByProductHandler(c *gin.Context) {
         "data":    logs,
     })
 }
+
+func GetAllProductStocksHandler(c *gin.Context) {
+	storeUUID := c.Param("store_uuid")
+
+	userUUID, exists := c.Get("user_uuid")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "Unauthorized",
+		})
+		return
+	}
+
+	owned, err := service.IsStoreOwnedByUser(storeUUID, userUUID.(string))
+	if err != nil || !owned {
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "error",
+			"message": "You are not allowed to access this store",
+		})
+		return
+	}
+
+	stocks, err := service.GetAllProductStocks(storeUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Product stocks fetched successfully",
+		"data":    stocks,
+	})
+}
