@@ -64,5 +64,6 @@ func RegisterRoutes(r *gin.Engine) {
 		product_stocks.GET("/stocks/log", controller.GetAllProductStockLogsHandler)
 		product_stocks.GET("/:product_uuid/stocks/log", controller.GetProductStockLogsByProductHandler)
 		product_stocks.GET("/stocks", controller.GetAllProductStocksHandler)
+		product_stocks.GET("/:product_uuid/stocks", controller.GetProductCurrentStockHandler)
 	}
 }
